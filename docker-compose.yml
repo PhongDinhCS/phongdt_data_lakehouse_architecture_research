@@ -50,12 +50,35 @@ services:
       - ./config
     environment:
       ENSURE_NAMENODE_DIR: "/tmp/hadoop-root/dfs/name"
+    networks:
+      - stock_network
   datanode:
     container_name: stock-analysis-app-datanode
     image: apache/hadoop:3
     command: ["hdfs", "datanode"]
     env_file:
-      - ./config      
+      - ./config  
+    networks:
+      - stock_network    
+  
+  datanode2:
+    container_name: stock-analysis-app-datanode2
+    image: apache/hadoop:3
+    command: ["hdfs", "datanode"]
+    env_file:
+      - ./config
+    networks:
+      - stock_network
+
+  datanode3:
+    container_name: stock-analysis-app-datanode3
+    image: apache/hadoop:3
+    command: ["hdfs", "datanode"]
+    env_file:
+      - ./config
+    networks:
+      - stock_network
+
   resourcemanager:
     container_name: stock-analysis-app-resourcemanager
     image: apache/hadoop:3
@@ -67,75 +90,79 @@ services:
       - ./config
     volumes:
       - ./test.sh:/opt/test.sh
+    networks:
+      - stock_network
   nodemanager:
     container_name: stock-analysis-app-nodemanager
     image: apache/hadoop:3
     command: ["yarn", "nodemanager"]
     env_file:
       - ./config
-
-
-  hive-metastore:
-    image: bde2020/hive:2.3.2-postgresql-metastore
-    container_name: hive-metastore
-    environment:
-      HIVE_DB: metastore
-      HIVE_USER: hive
-      HIVE_PASSWORD: hive
-      HIVE_HOST: localhost
-      HADOOP_HOME: /opt/hadoop
-      HIVE_HOME: /opt/hive
-    ports:
-      - "9083:9083"
-    depends_on:
-      - namenode
-      - datanode
     networks:
       - stock_network
 
-  hive-server:
-    image: bde2020/hive:2.3.2-postgresql-metastore
-    container_name: hive-server
-    environment:
-      SERVICE_PRECONDITION: "hive-metastore:9083"
-      HADOOP_HOME: /opt/hadoop
-      HIVE_HOME: /opt/hive
-    ports:
-      - "10000:10000"
-    depends_on:
-      - hive-metastore
-    networks:
-      - stock_network
 
-  spark:
-    image: docker.io/bitnami/spark:3.5
-    container_name: spark
-    environment:
-      - SPARK_MODE=master
-      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-      - SPARK_RPC_ENCRYPTION_ENABLED=no
-      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-      - SPARK_SSL_ENABLED=no
-      - SPARK_USER=spark
-    ports:
-      - '8080:8080'
-      - '7077:7077'
+  # hive-metastore:
+  #   image: bde2020/hive:2.3.2-postgresql-metastore
+  #   container_name: hive-metastore
+  #   environment:
+  #     HIVE_DB: metastore
+  #     HIVE_USER: hive
+  #     HIVE_PASSWORD: hive
+  #     HIVE_HOST: localhost
+  #     HADOOP_HOME: /opt/hadoop
+  #     HIVE_HOME: /opt/hive
+  #   ports:
+  #     - "9083:9083"
+  #   depends_on:
+  #     - namenode
+  #     - datanode
+  #   networks:
+  #     - stock_network
 
-  spark-worker:
-    image: docker.io/bitnami/spark:3.5
-    container_name: spark-worker
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark:7077
-      - SPARK_WORKER_MEMORY=1G
-      - SPARK_WORKER_CORES=1
-      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-      - SPARK_RPC_ENCRYPTION_ENABLED=no
-      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-      - SPARK_SSL_ENABLED=no
-      - SPARK_USER=spark
-    depends_on:
-      - spark
+  # hive-server:
+  #   image: bde2020/hive:2.3.2-postgresql-metastore
+  #   container_name: hive-server
+  #   environment:
+  #     SERVICE_PRECONDITION: "hive-metastore:9083"
+  #     HADOOP_HOME: /opt/hadoop
+  #     HIVE_HOME: /opt/hive
+  #   ports:
+  #     - "10000:10000"
+  #   depends_on:
+  #     - hive-metastore
+  #   networks:
+  #     - stock_network
+
+  # spark:
+  #   image: docker.io/bitnami/spark:3.5
+  #   container_name: spark
+  #   environment:
+  #     - SPARK_MODE=master
+  #     - SPARK_RPC_AUTHENTICATION_ENABLED=no
+  #     - SPARK_RPC_ENCRYPTION_ENABLED=no
+  #     - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+  #     - SPARK_SSL_ENABLED=no
+  #     - SPARK_USER=spark
+  #   ports:
+  #     - '8080:8080'
+  #     - '7077:7077'
+
+  # spark-worker:
+  #   image: docker.io/bitnami/spark:3.5
+  #   container_name: spark-worker
+  #   environment:
+  #     - SPARK_MODE=worker
+  #     - SPARK_MASTER_URL=spark://spark:7077
+  #     - SPARK_WORKER_MEMORY=1G
+  #     - SPARK_WORKER_CORES=1
+  #     - SPARK_RPC_AUTHENTICATION_ENABLED=no
+  #     - SPARK_RPC_ENCRYPTION_ENABLED=no
+  #     - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+  #     - SPARK_SSL_ENABLED=no
+  #     - SPARK_USER=spark
+  #   depends_on:
+  #     - spark
 
 
 
