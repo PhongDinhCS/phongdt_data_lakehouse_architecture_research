@@ -3,7 +3,7 @@ version: '3'
 services: 
 # build kafka container
   kafka:
-    container_name: stock-analysis-app-kafka-container
+    container_name: lakehouse-kafka
     image: 'bitnami/kafka:latest'
     ports:
       - '9092:9092'
@@ -15,17 +15,17 @@ services:
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
     networks:
-      - stock_network
+      - lakehouse_network
 
 # create kafka topic depend on kafka container
 # make sure that you run (chmod +x create_topic.sh) from the directory STOCK_ANALYSIS_APP before run docker-compose
 # run this code after (docker compose up) to check list of Topics (sudo docker-compose exec kafka kafka-topics.sh --list --bootstrap-server localhost:9092)
 
   kafka-create-topic: 
-    container_name: stock-analysis-app-kafka-create-topic-container
+    container_name: lakehouse-kafka-create-topic
     image: bitnami/kafka:latest 
     networks: 
-      - stock_network 
+      - lakehouse_network 
     command: [ "/bin/bash", "-c", "/create_topic.sh"] 
     environment: 
       - DEFAULT_TOPIC=default_topic
@@ -39,8 +39,8 @@ services:
     init: true
 
 #build Hadoop
-  namenode:
-    container_name: stock-analysis-app-namenode
+  hadoop-namenode:
+    container_name: lakehouse-hadoop-namenode
     image: apache/hadoop:3
     hostname: namenode
     command: ["hdfs", "namenode"]
@@ -51,36 +51,36 @@ services:
     environment:
       ENSURE_NAMENODE_DIR: "/tmp/hadoop-root/dfs/name"
     networks:
-      - stock_network
-  datanode:
-    container_name: stock-analysis-app-datanode
+      - lakehouse_network
+  hadoop-datanode:
+    container_name: lakehouse-hadoop-datanode
     image: apache/hadoop:3
     command: ["hdfs", "datanode"]
     env_file:
       - ./config  
     networks:
-      - stock_network    
+      - lakehouse_network    
   
-  datanode2:
-    container_name: stock-analysis-app-datanode2
+  hadoop-datanode2:
+    container_name: lakehouse-hadoop-datanode2
     image: apache/hadoop:3
     command: ["hdfs", "datanode"]
     env_file:
       - ./config
     networks:
-      - stock_network
+      - lakehouse_network
 
-  datanode3:
-    container_name: stock-analysis-app-datanode3
+  hadoop-datanode3:
+    container_name: lakehouse-hadoop-datanode3
     image: apache/hadoop:3
     command: ["hdfs", "datanode"]
     env_file:
       - ./config
     networks:
-      - stock_network
+      - lakehouse_network
 
-  resourcemanager:
-    container_name: stock-analysis-app-resourcemanager
+  hadoop-resourcemanager:
+    container_name: lakehouse-hadoop-resourcemanager
     image: apache/hadoop:3
     hostname: resourcemanager
     command: ["yarn", "resourcemanager"]
@@ -91,84 +91,70 @@ services:
     volumes:
       - ./test.sh:/opt/test.sh
     networks:
-      - stock_network
-  nodemanager:
-    container_name: stock-analysis-app-nodemanager
+      - lakehouse_network
+  hadoop-nodemanager:
+    container_name: lakehouse-hadoop-nodemanager
     image: apache/hadoop:3
     command: ["yarn", "nodemanager"]
     env_file:
       - ./config
     networks:
-      - stock_network
+      - lakehouse_network
 
+    # Add HiveServer2 service
+  hiveserver2:
+    image: apache/hive:4.0.0
+    container_name: hiveserver2
+    environment:
+      SERVICE_NAME: hiveserver2
+    ports:
+      - "10000:10000"
+      - "10002:10002"
+    networks:
+      - lakehouse_network
 
-  # hive-metastore:
-  #   image: bde2020/hive:2.3.2-postgresql-metastore
-  #   container_name: hive-metastore
-  #   environment:
-  #     HIVE_DB: metastore
-  #     HIVE_USER: hive
-  #     HIVE_PASSWORD: hive
-  #     HIVE_HOST: localhost
-  #     HADOOP_HOME: /opt/hadoop
-  #     HIVE_HOME: /opt/hive
-  #   ports:
-  #     - "9083:9083"
-  #   depends_on:
-  #     - namenode
-  #     - datanode
-  #   networks:
-  #     - stock_network
+  # Add Metastore service
+  metastore:
+    image: apache/hive:4.0.0
+    container_name: metastore
+    environment:
+      SERVICE_NAME: metastore
+    ports:
+      - "9083:9083"
+    depends_on:
+      - hadoop-namenode
+      - hadoop-datanode
+    networks:
+      - lakehouse_network
 
-  # hive-server:
-  #   image: bde2020/hive:2.3.2-postgresql-metastore
-  #   container_name: hive-server
-  #   environment:
-  #     SERVICE_PRECONDITION: "hive-metastore:9083"
-  #     HADOOP_HOME: /opt/hadoop
-  #     HIVE_HOME: /opt/hive
-  #   ports:
-  #     - "10000:10000"
-  #   depends_on:
-  #     - hive-metastore
-  #   networks:
-  #     - stock_network
+# Use Apache Spark 
+  spark-master:
+    image: apache/spark:latest
+    container_name: spark-master
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+    environment:
+      - SPARK_MASTER_HOST=spark-master
+      - SPARK_MASTER_PORT=7077
+    networks:
+      - lakehouse_network
 
-  # spark:
-  #   image: docker.io/bitnami/spark:3.5
-  #   container_name: spark
-  #   environment:
-  #     - SPARK_MODE=master
-  #     - SPARK_RPC_AUTHENTICATION_ENABLED=no
-  #     - SPARK_RPC_ENCRYPTION_ENABLED=no
-  #     - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-  #     - SPARK_SSL_ENABLED=no
-  #     - SPARK_USER=spark
-  #   ports:
-  #     - '8080:8080'
-  #     - '7077:7077'
-
-  # spark-worker:
-  #   image: docker.io/bitnami/spark:3.5
-  #   container_name: spark-worker
-  #   environment:
-  #     - SPARK_MODE=worker
-  #     - SPARK_MASTER_URL=spark://spark:7077
-  #     - SPARK_WORKER_MEMORY=1G
-  #     - SPARK_WORKER_CORES=1
-  #     - SPARK_RPC_AUTHENTICATION_ENABLED=no
-  #     - SPARK_RPC_ENCRYPTION_ENABLED=no
-  #     - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-  #     - SPARK_SSL_ENABLED=no
-  #     - SPARK_USER=spark
-  #   depends_on:
-  #     - spark
-
-
-
+  spark-worker:
+    image: apache/spark:latest
+    container_name: spark-worker
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    environment:
+      - SPARK_WORKER_MEMORY=1g
+      - SPARK_WORKER_CORES=1
+    depends_on:
+      - spark-master
+    networks:
+      - lakehouse_network
 
 networks:
-  stock_network:
+  lakehouse_network:
 
 volumes:
   backend_data:

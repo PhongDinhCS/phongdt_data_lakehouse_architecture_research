@@ -6,21 +6,29 @@
 #sudo docker-compose exec kafka /opt/bitnami/kafka/bin/kafka-console-producer.sh --topic default_topic --bootstrap-server localhost:9092
 #sudo docker-compose exec kafka /opt/bitnami/kafka/bin/kafka-console-consumer.sh --topic default_topic --from-beginning --bootstrap-server localhost:9092
 
-
-
-
-
-
-
-
-
-
-
-
+Instructions:
+Ensure you run chmod +x create_topic.sh before starting the services.
+Use docker-compose up -d to start all services.
+Check the list of topics with sudo docker-compose exec kafka kafka-topics.sh --list --bootstrap-server localhost:9092.
+Use docker exec -it hiveserver2 beeline -u 'jdbc:hive2://hiveserver2:10000/' to interact with Hive.
 
 ---
-https://chat.openai.com/share/6f16a03f-6a78-4ae2-93f7-288ebc43e449
+git clone https://github.com/PhongDinhCS/phongdt_data_lakehouse_architecture_research.git
+docker compose down
+docker stop $(docker ps -aq) && docker rm $(docker ps -aq)
+docker volume prune
+docker container prune
+docker-compose down -v --remove-orphans
+docker-compose up -d
+docker network ls
+docker network prune
+docker network inspect phongdt_data_lakehouse_architecture_research_lakehouse_network
+docker network rm phongdt_data_lakehouse_architecture_research_lakehouse_network
+docker exec -it hiveserver2 bash
+docker exec -it metastore beeline -u 'jdbc:hive2://localhost:10002'
+docker exec -it hiveserver2 beeline -u 'jdbc:hive2://hiveserver2:10000/'
 
+---
 mkdir stock_analysis_app
 cd stock_analysis_app
 
@@ -51,4 +59,5 @@ touch .env
 
 # Volumes
 mkdir -p volumes
+
 
