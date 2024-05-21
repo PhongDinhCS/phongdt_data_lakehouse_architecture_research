@@ -1,4 +1,4 @@
-#run this file by: bash create_topic.sh
+#run this file by: bash kafka_create_topic.sh
 
 # docker exec -it kafka /opt/kafka/bin/kafka-topics.sh --create --topic html_topic --bootstrap-server localhost:9092
 docker exec -it kafka /opt/kafka/bin/kafka-topics.sh --create --topic html_topic --bootstrap-server kafka:9092

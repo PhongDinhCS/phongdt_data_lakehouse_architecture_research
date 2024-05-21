@@ -28,6 +28,13 @@ docker exec -it hiveserver2 bash
 docker exec -it metastore beeline -u 'jdbc:hive2://localhost:10002'
 docker exec -it hiveserver2 beeline -u 'jdbc:hive2://hiveserver2:10000/'
 
+
+git commit
+git commit -m "install and run kafka to scrape htlm"
+git add .
+git push origin main
+
+
 ---
 mkdir stock_analysis_app
 cd stock_analysis_app
