@@ -136,7 +136,6 @@ cd /opt/spark/work-dir
 
 docker start $(docker ps -aq)
 
-
 ---
 #check the permission of hdfs user on delta-spark able to write to hdfs://namenode:8020
 NBuser@d38823102863:/opt/spark/work-dir$ hdfs groups -fs hdfs://namenode:8020
