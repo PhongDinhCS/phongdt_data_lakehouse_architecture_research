@@ -4,7 +4,7 @@ import pyarrow.parquet as pq
 from datetime import datetime
 
 # Kafka consumer configuration (replace with your actual details)
-bootstrap_servers = '172.18.0.10:9092'  # Replace with your Kafka broker address
+bootstrap_servers = 'kafka:9092'  # Replace with your Kafka broker address
 # Uncomment the line below if your Kafka broker is named "kafka" and uses default port 9092
 # bootstrap_servers = 'kafka:9092'
 topic = 'html_topic'  # Replace with the topic name where Parquet data is sent

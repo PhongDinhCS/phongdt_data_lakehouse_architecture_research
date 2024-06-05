@@ -8,12 +8,17 @@ services:
     ports:
       - "9092:9092"  # Expose Kafka port (default 9092)
     networks:
-      - lakehouse_network
+      lakehouse_network:
+        ipv4_address: 172.18.0.99
+        aliases:
+          - kafka
 
 #build Hadoop
-  hadoop-namenode:
-    container_name: lakehouse-hadoop-namenode
+  namenode:
+    container_name: namenode
     image: apache/hadoop:3
+    entrypoint: ["bash", "-c", "while true; do sleep 30; done;"]
+    restart: unless-stopped
     hostname: namenode
     command: ["hdfs", "namenode"]
     ports:
@@ -23,37 +28,49 @@ services:
     environment:
       ENSURE_NAMENODE_DIR: "/tmp/hadoop-root/dfs/name"
     networks:
-      - lakehouse_network
-  hadoop-datanode:
-    container_name: lakehouse-hadoop-datanode
+      lakehouse_network:
+        ipv4_address: 172.18.0.98
+  datanode:
+    container_name: datanode
     image: apache/hadoop:3
+    entrypoint: ["bash", "-c", "while true; do sleep 30; done;"]
+    restart: unless-stopped
     command: ["hdfs", "datanode"]
     env_file:
       - ./config  
     networks:
-      - lakehouse_network    
+      lakehouse_network:
+        ipv4_address: 172.18.0.97
   
-  hadoop-datanode2:
-    container_name: lakehouse-hadoop-datanode2
+  datanode2:
+    container_name: datanode2
     image: apache/hadoop:3
+    entrypoint: ["bash", "-c", "while true; do sleep 30; done;"]
+    restart: unless-stopped
     command: ["hdfs", "datanode"]
     env_file:
       - ./config
     networks:
-      - lakehouse_network
+      lakehouse_network:
+        ipv4_address: 172.18.0.96
 
-  hadoop-datanode3:
-    container_name: lakehouse-hadoop-datanode3
+  datanode3:
+    container_name: datanode3
     image: apache/hadoop:3
+    entrypoint: ["bash", "-c", "while true; do sleep 30; done;"]
+    restart: unless-stopped
     command: ["hdfs", "datanode"]
     env_file:
       - ./config
     networks:
-      - lakehouse_network
+      lakehouse_network:
+        ipv4_address: 172.18.0.95
 
-  hadoop-resourcemanager:
-    container_name: lakehouse-hadoop-resourcemanager
+  resourcemanager:
+    container_name: resourcemanager
     image: apache/hadoop:3
+    entrypoint: ["bash", "-c", "while true; do sleep 30; done;"]
+    restart: unless-stopped
     hostname: resourcemanager
     command: ["yarn", "resourcemanager"]
     ports:
@@ -63,73 +80,91 @@ services:
     volumes:
       - ./test.sh:/opt/test.sh
     networks:
-      - lakehouse_network
-  hadoop-nodemanager:
-    container_name: lakehouse-hadoop-nodemanager
+      lakehouse_network:
+        ipv4_address: 172.18.0.94
+  nodemanager:
+    container_name: nodemanager
     image: apache/hadoop:3
+    entrypoint: ["bash", "-c", "while true; do sleep 30; done;"]
+    restart: unless-stopped
     command: ["yarn", "nodemanager"]
     env_file:
       - ./config
     networks:
-      - lakehouse_network
+      lakehouse_network:
+        ipv4_address: 172.18.0.93
 
-    # Add HiveServer2 service
-  hiveserver2:
-    image: apache/hive:4.0.0
-    container_name: hiveserver2
-    environment:
-      SERVICE_NAME: hiveserver2
-    ports:
-      - "10000:10000"
-      - "10002:10002"
-    networks:
-      - lakehouse_network
+  #   # Add HiveServer2 service
+  # hiveserver2:
+  #   image: apache/hive:4.0.0
+  #   container_name: hiveserver2
+  #   environment:
+  #     SERVICE_NAME: hiveserver2
+  #   ports:
+  #     - "10000:10000"
+  #     - "10002:10002"
+  #   networks:
+  #     - lakehouse_network
 
-  # Add Metastore service
-  metastore:
-    image: apache/hive:4.0.0
-    container_name: metastore
-    environment:
-      SERVICE_NAME: metastore
-    ports:
-      - "9083:9083"
-    depends_on:
-      - hadoop-namenode
-      - hadoop-datanode
-    networks:
-      - lakehouse_network
+  # # Add Metastore service
+  # metastore:
+  #   image: apache/hive:4.0.0
+  #   container_name: metastore
+  #   environment:
+  #     SERVICE_NAME: metastore
+  #   ports:
+  #     - "9083:9083"
+  #   depends_on:
+  #     - namenode
+  #     - datanode
+  #   networks:
+  #     - lakehouse_network
 
-# Use Apache Spark 
-  spark-master:
-    image: apache/spark:latest
-    container_name: spark-master
-    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
-    ports:
-      - "8080:8080"
-      - "7077:7077"
-    environment:
-      - SPARK_MASTER_HOST=spark-master
-      - SPARK_MASTER_PORT=7077
-    networks:
-      - lakehouse_network
+# # Use Apache Spark 
+#   spark-master:
+#     image: apache/spark:latest
+#     container_name: spark-master
+#     command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+#     ports:
+#       - "8080:8080"
+#       - "7077:7077"
+#     environment:
+#       - SPARK_MASTER_HOST=spark-master
+#       - SPARK_MASTER_PORT=7077
+#     networks:
+#       - lakehouse_network
 
-  spark-worker:
-    image: apache/spark:latest
-    container_name: spark-worker
-    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
-    environment:
-      - SPARK_WORKER_MEMORY=1g
-      - SPARK_WORKER_CORES=1
-    depends_on:
-      - spark-master
-    volumes:
-      - ./spark_job.py:/spark_job.py
+#   spark-worker:
+#     image: apache/spark:latest
+#     container_name: spark-worker
+#     command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+#     environment:
+#       - SPARK_WORKER_MEMORY=1g
+#       - SPARK_WORKER_CORES=1
+#     depends_on:
+#       - spark-master
+#     volumes:
+#       - ./spark_job.py:/spark_job.py
+#     networks:
+#       - lakehouse_network
+
+# Delta Spark container
+  delta-spark:
+    container_name: delta-spark
+    image: deltaio/delta-docker:latest
+    entrypoint: ["bash", "-c", "while true; do sleep 30; done;"]
     networks:
-      - lakehouse_network
+      lakehouse_network:
+        ipv4_address: 172.18.0.92
+    restart: unless-stopped
 
 networks:
   lakehouse_network:
     driver: bridge
+    ipam:
+     config:
+       - subnet: 172.18.0.0/16
+         gateway: 172.18.0.1
 
 volumes:
   backend_data:

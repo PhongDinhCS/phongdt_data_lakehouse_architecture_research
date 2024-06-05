@@ -62,7 +62,7 @@ import subprocess
 # Example usage:
 source_url = 'https://www.dailyfx.com/forex-rates#currencies'
 div_class = 'dfx-tabs__content'
-output_dir = './output/'
+output_dir = '/home/ubuntu2020/phongdinhcs_project/phongdt_data_lakehouse_architecture_research/backend/output/'
 
 
 def scrape_and_save_as_parquet(source_url, div_class, output_dir):
@@ -122,7 +122,7 @@ def scrape_and_save_as_parquet(source_url, div_class, output_dir):
 
 
 # Kafka connection details
-bootstrap_servers = '172.18.0.10:9092'
+bootstrap_servers = 'kafka:9092'
 # Uncomment the line below if your Kafka broker is named "kafka" and uses default port 9092
 # bootstrap_servers = 'kafka:9092'
 topic = 'html_topic'
